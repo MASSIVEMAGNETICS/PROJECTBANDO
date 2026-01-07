@@ -1,0 +1,9 @@
+{
+  "base_path": ".",
+  "inbox_dir": "inbox",
+  "vault_dir": "vault",
+  "quarantine_dir": "quarantine",
+  "db_file": "victorvault.db",
+  "checkpoint_file": "shard_checkpoint.npz",
+  "watch_interval": 5
+}
