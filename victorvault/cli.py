@@ -19,9 +19,18 @@ class VictorVaultCLI:
         
         Args:
             config_path: Path to config.json
+            
+        Raises:
+            FileNotFoundError: If config file doesn't exist
+            json.JSONDecodeError: If config file is invalid JSON
         """
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
+        try:
+            with open(config_path, 'r') as f:
+                self.config = json.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+        except json.JSONDecodeError as e:
+            raise json.JSONDecodeError(f"Invalid JSON in config file: {e.msg}", e.doc, e.pos)
         
         # Initialize paths
         base_path = Path(self.config.get('base_path', '.')).resolve()
@@ -31,9 +40,9 @@ class VictorVaultCLI:
         self.db_path = base_path / self.config.get('db_file', 'victorvault.db')
         self.checkpoint_path = base_path / self.config.get('checkpoint_file', 'shard_checkpoint.npz')
         
-        # Initialize components
-        self.ingest_engine = IngestEngine(self.inbox_path, self.vault_path, self.quarantine_path)
+        # Initialize components (index first for deduplication)
         self.index = VaultIndex(self.db_path)
+        self.ingest_engine = IngestEngine(self.inbox_path, self.vault_path, self.quarantine_path, self.index)
         self.observer = VaultObserver(self.index, self.checkpoint_path)
     
     def cmd_ingest(self, args):
@@ -209,7 +218,14 @@ def main():
         print("Run with a valid --config path or create config.json in current directory.")
         return
     
-    cli = VictorVaultCLI(config_path)
+    try:
+        cli = VictorVaultCLI(config_path)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in config file: {e}")
+        return
+    except Exception as e:
+        print(f"Error initializing VictorVault: {e}")
+        return
     
     # Execute command
     if args.command == 'ingest':

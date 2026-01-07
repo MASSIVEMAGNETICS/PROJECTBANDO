@@ -12,18 +12,20 @@ import tempfile
 class IngestEngine:
     """Engine for ingesting session files into the vault."""
     
-    def __init__(self, inbox_path: Path, vault_path: Path, quarantine_path: Path):
+    def __init__(self, inbox_path: Path, vault_path: Path, quarantine_path: Path, index=None):
         """Initialize ingestion engine.
         
         Args:
             inbox_path: Directory to monitor for incoming files
             vault_path: Directory to store processed files
             quarantine_path: Directory for quarantined files
+            index: Optional VaultIndex for persistent duplicate checking
         """
         self.inbox_path = inbox_path
         self.vault_path = vault_path
         self.quarantine_path = quarantine_path
-        self.processed_hashes = set()
+        self.index = index
+        self.processed_hashes = set()  # In-memory cache for current session
         
         # Ensure directories exist
         self.inbox_path.mkdir(parents=True, exist_ok=True)
@@ -112,8 +114,13 @@ class IngestEngine:
         # Compute hash for deduplication
         file_hash = self.compute_sha256(file_path)
         
+        # Check in-memory cache first (current session)
         if file_hash in self.processed_hashes:
             return False, f"Duplicate file (hash: {file_hash[:8]}...)"
+        
+        # Check persistent index if available (across sessions)
+        if self.index and self.index.hash_exists(file_hash):
+            return False, f"Duplicate file already in vault (hash: {file_hash[:8]}...)"
         
         # Validate JSON
         is_valid, data = self.validate_session_json(file_path)

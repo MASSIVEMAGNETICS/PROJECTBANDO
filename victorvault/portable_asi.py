@@ -139,15 +139,18 @@ class PortableShard:
         
         Args:
             checkpoint_path: Path to checkpoint file
+            
+        Note:
+            Using allow_pickle for JSON strings only. Vector data is numpy arrays
+            which don't require pickle. Consider checkpoint source validation in production.
         """
-        data = np.load(checkpoint_path, allow_pickle=True)
-        
-        self.vocab = json.loads(str(data['vocab']))
-        self.idf = json.loads(str(data['idf']))
-        self.feedback_history = json.loads(str(data['feedback_history']))
-        
-        # Load mission prototypes
-        for key in data.keys():
-            if key.startswith('mission_'):
-                mission_name = key[8:]  # Remove 'mission_' prefix
-                self.mission_prototypes[mission_name] = data[key]
+        with np.load(checkpoint_path, allow_pickle=True) as data:
+            self.vocab = json.loads(str(data['vocab']))
+            self.idf = json.loads(str(data['idf']))
+            self.feedback_history = json.loads(str(data['feedback_history']))
+            
+            # Load mission prototypes
+            for key in data.keys():
+                if key.startswith('mission_'):
+                    mission_name = key[8:]  # Remove 'mission_' prefix
+                    self.mission_prototypes[mission_name] = data[key]
