@@ -5,6 +5,7 @@ quarantine/
 victorvault.db
 shard_checkpoint.npz
 cooccurrence.json
+victorvault_demo/
 
 # Python
 __pycache__/
