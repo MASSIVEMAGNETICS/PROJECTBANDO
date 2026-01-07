@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import List, Dict, Any
+from urllib.parse import urlparse
 import json
 
 from .portable_asi import PortableShard
@@ -128,10 +129,16 @@ class VaultObserver:
                 for tab in tabs:
                     if isinstance(tab, dict) and 'url' in tab:
                         url = tab['url']
-                        # Extract domain
-                        if '://' in url:
-                            domain = url.split('://')[1].split('/')[0]
-                            urls.append(domain)
+                        # Extract domain using urlparse for robust parsing
+                        try:
+                            parsed = urlparse(url)
+                            if parsed.netloc:
+                                # Use netloc which handles ports and auth correctly
+                                domain = parsed.netloc
+                                urls.append(domain)
+                        except Exception:
+                            # Skip malformed URLs
+                            continue
                 
                 # Build co-occurrence for this session
                 for i, url1 in enumerate(urls):

@@ -22,15 +22,15 @@ class VictorVaultCLI:
             
         Raises:
             FileNotFoundError: If config file doesn't exist
-            json.JSONDecodeError: If config file is invalid JSON
+            ValueError: If config file contains invalid JSON
         """
         try:
             with open(config_path, 'r') as f:
                 self.config = json.load(f)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Config file not found: {config_path}") from e
         except json.JSONDecodeError as e:
-            raise json.JSONDecodeError(f"Invalid JSON in config file: {e.msg}", e.doc, e.pos)
+            raise ValueError(f"Invalid JSON in config file: {e.msg}") from e
         
         # Initialize paths
         base_path = Path(self.config.get('base_path', '.')).resolve()
@@ -220,8 +220,8 @@ def main():
     
     try:
         cli = VictorVaultCLI(config_path)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in config file: {e}")
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e}")
         return
     except Exception as e:
         print(f"Error initializing VictorVault: {e}")

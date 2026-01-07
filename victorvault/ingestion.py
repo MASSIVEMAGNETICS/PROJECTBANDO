@@ -91,7 +91,9 @@ class IngestEngine:
         # Create temp file in same directory as destination for atomic rename
         temp_fd, temp_path = tempfile.mkstemp(dir=destination.parent, prefix='.tmp_')
         try:
-            with open(temp_fd, 'wb') as temp_f:
+            # Use os.fdopen to create file object from file descriptor
+            import os
+            with os.fdopen(temp_fd, 'wb') as temp_f:
                 with open(source, 'rb') as source_f:
                     shutil.copyfileobj(source_f, temp_f)
             
